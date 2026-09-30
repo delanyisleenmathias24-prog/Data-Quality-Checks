@@ -21,7 +21,7 @@ column_mapping = {
     'Phase': 'phase',
     'Status recruitment': 'status',
     'IIT': 'styp',  
-    'Inititated by UMG': 'styp1',  # Note: two 't's in the Excel column name!
+    'Inititated by UMG': 'styp1',  
     'durchführende Einheit': 'department',
     'PI UMG': 'controller',
     'Altersgruppe': 'altersgruppe',
@@ -125,10 +125,6 @@ def safe_str(value):
     return str(value).strip()
 
 def calculate_styp(row):
-    """
-    Calculate the styp (study type) for Greifswald
-    Same logic as Rostock but with different column names
-    """
     region = row.get('region', 'Greifswald') 
     iit = str(row.get('IIT', '')).lower().strip()
     umr_init = str(row.get('Inititated by UMG', '')).lower().strip()
@@ -166,7 +162,7 @@ def compare_studies(df_studien, df_text_csv, debug=False):
     not_found_in_mapped = []  # Track acronyms not found in mapped file
     
     print("\n" + "="*80)
-    print("🔍 STARTING COMPARISON")
+    print("STARTING COMPARISON")
     print("="*80)
     
     # Debug: Print column info
@@ -208,13 +204,13 @@ def compare_studies(df_studien, df_text_csv, debug=False):
             continue
         
         if debug:
-            print(f"\n🔍 Processing: {acronym}")
+            print(f"\nProcessing: {acronym}")
         
         # Check if this study should be skipped based on status
         status_value = safe_str(study_row.get('Status recruitment', ''))
         if status_value in SKIP_STATUS_VALUES:
             if debug:
-                print(f"  ⏭️ Skipping '{acronym}' (Status: '{status_value}' - ignored in mapped file)")
+                print(f"  Skipping '{acronym}' (Status: '{status_value}' - ignored in mapped file)")
             skipped_count += 1
             continue
         
@@ -222,7 +218,7 @@ def compare_studies(df_studien, df_text_csv, debug=False):
         acr_lower = acronym.lower()
         if acr_lower not in text_dict:
             if debug:
-                print(f"  ❌ No match found for '{acronym}' - will be discarded")
+                print(f"  No match found for '{acronym}' - will be discarded")
             unmatched_count += 1
             not_found_in_mapped.append(acronym)
             continue  # Skip this study entirely - don't add to mismatches
@@ -231,12 +227,10 @@ def compare_studies(df_studien, df_text_csv, debug=False):
         text_row = text_dict[acr_lower]
         
         if debug:
-            print(f"  ✅ Match found in mapped file")
-            print(f"  📝 Title: {safe_str(text_row.get('title', ''))[:60]}...")
+            print(f"  Match found in mapped file")
+            print(f"  Title: {safe_str(text_row.get('title', ''))[:60]}...")
         
-        # ---- COMPARE EACH FIELD ----
-        # Use the same logic as Rostock for each field comparison
-        
+        # ---- COMPARE EACH FIELD ----        
         # 1. Compare Title
         expected_title = study_row.get('Studie')
         actual_title = text_row.get('title')
@@ -517,7 +511,7 @@ class ComparisonApp:
         
         # Info label
         info_label = ttk.Label(main_frame, 
-                               text="ℹ️ Studies with status 'Study participation planned' will be skipped",
+                               text="Studies with status 'Study participation planned' will be skipped",
                                foreground="gray", font=('Arial', 9))
         info_label.grid(row=4, column=0, columnspan=3, sticky=tk.W, pady=5)
         
@@ -604,7 +598,7 @@ class ComparisonApp:
             # Load Studienliste Excel
             # ================================================================
             print("\n" + "="*80)
-            print(f"📂 LOADING STUDIENLISTE: {self.excel_file_path}")
+            print(f"LOADING STUDIENLISTE: {self.excel_file_path}")
             print("="*80)
             
             df_studien = None
@@ -623,10 +617,10 @@ class ComparisonApp:
                     found_count = sum(1 for col in expected_cols if any(col in c for c in sample_columns))
                     
                     if found_count >= 2:
-                        print(f"   ✅ Found {found_count}/{len(expected_cols)} expected columns - using this header")
+                        print(f"   Found {found_count}/{len(expected_cols)} expected columns - using this header")
                         break
                     else:
-                        print(f"   ⚠️ Only found {found_count}/{len(expected_cols)} expected columns - trying next header")
+                        print(f"   Only found {found_count}/{len(expected_cols)} expected columns - trying next header")
                 except Exception as e:
                     print(f"   Error with header={header_row}: {e}")
             
@@ -637,7 +631,7 @@ class ComparisonApp:
             # Load Mapped File
             # ================================================================
             print("\n" + "="*80)
-            print(f"📂 LOADING MAPPED FILE: {self.mapped_file_path}")
+            print(f"LOADING MAPPED FILE: {self.mapped_file_path}")
             print("="*80)
             
             file_extension = os.path.splitext(self.mapped_file_path)[1].lower()
@@ -646,7 +640,7 @@ class ComparisonApp:
             if file_extension in ['.xlsx', '.xls']:
                 try:
                     df_text = pd.read_excel(self.mapped_file_path, sheet_name=0)
-                    print(f"✅ Loaded Excel file")
+                    print(f"Loaded Excel file")
                 except Exception as e:
                     print(f"Error loading Excel: {e}")
                     raise
@@ -655,7 +649,7 @@ class ComparisonApp:
                 for enc in encodings:
                     try:
                         df_text = pd.read_csv(self.mapped_file_path, encoding=enc, low_memory=False)
-                        print(f"✅ Loaded CSV with encoding: {enc}")
+                        print(f"Loaded CSV with encoding: {enc}")
                         break
                     except Exception as e:
                         print(f"   Failed with {enc}: {str(e)[:50]}")
@@ -671,7 +665,7 @@ class ComparisonApp:
             # Clean the data
             # ================================================================
             print("\n" + "="*80)
-            print("🧹 CLEANING DATA")
+            print("CLEANING DATA")
             print("="*80)
             
             # Strip whitespace from string columns
@@ -690,7 +684,7 @@ class ComparisonApp:
             # Run Comparison
             # ================================================================
             print("\n" + "="*80)
-            print("🔍 RUNNING COMPARISON")
+            print("RUNNING COMPARISON")
             print("="*80)
             
             mismatches_df, matched_count, unmatched_count = compare_studies(df_studien, df_text, debug=debug)
@@ -705,15 +699,15 @@ class ComparisonApp:
             # Save only the mismatches
             mismatches_df.to_excel(output_path, index=False, engine='openpyxl')
             
-            print(f"\n✅ Results saved to:")
-            print(f"   📄 {output_path}")
+            print(f"\nResults saved to:")
+            print(f"   {output_path}")
             print("="*80 + "\n")
             
             # Show result to user
             if len(mismatches_df) == 0:
                 self.update_status("Complete - No mismatches found!")
                 self.root.after(0, lambda: messagebox.showinfo("Success", 
-                    "✅ Comparison completed successfully!\n\n" +
+                    "Comparison completed successfully!\n\n" +
                     "All studies match perfectly!\n\n" +
                     f"Output saved to:\n{output_path}"))
             else:
@@ -724,13 +718,13 @@ class ComparisonApp:
                 issue_summary = "\n".join([f"  • {k}: {v}" for k, v in issue_counts.items()])
                 
                 self.root.after(0, lambda: messagebox.showwarning("Comparison Complete", 
-                    f"⚠️ Found {len(mismatches_df)} mismatches!\n\n" +
+                    f"Found {len(mismatches_df)} mismatches!\n\n" +
                     f"Issue breakdown:\n{issue_summary}\n\n" +
                     f"Output saved to:\n{output_path}"))
             
         except Exception as e:
             error_msg = f"Error: {str(e)}"
-            print(f"\n❌ {error_msg}")
+            print(f"\n{error_msg}")
             self.update_status("Error occurred")
             import traceback
             traceback.print_exc()
