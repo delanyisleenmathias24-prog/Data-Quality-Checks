@@ -12,9 +12,11 @@ column_mapping = {
     'Studientitel deutsch': 'title',  
     'Studientitel': 'title',
     'Acronym': 'acronym',
-    'EU-CT No': 'ref_id',
+    'EU-CT No': 'ref_id', 
+    'Registrierungs-nummer DRKS': 'drks_id',
     'Registrierungsnummer Clinical trials gov': 'nct_id',
-    'Erkrankung': 'organsystem',
+    #'Erkrankung': 'organsystem', 
+    'Erkrankung vereinfacht': 'organsystem',
     'Art der Intervention und Stadium': 'stadium',
     'Phase': 'phase',
     'Rekrutierungsstatus': 'status',
@@ -44,7 +46,8 @@ location_mapping = {
     'Universitätsklinikum Rostock': 'Rostock UMR',
     'Uniklinik Rostock': 'Rostock UMR',
     'Universitätsmedizin Greifswald': 'Greifswald UMG',
-    'Greifswald UMG': 'Greifswald UMG'
+    'Greifswald UMG': 'Greifswald UMG',
+    'Gemeinschaftspraxis Rostock' : 'Gemeinschaftspraxis Rostock, Wismarsche Str.'
 }
 
 # Phase mapping (simplify phase names)
@@ -200,7 +203,21 @@ def compare_studies(df_studien, df_text_csv):
                     'wrong_value': actual_ref_id,
                     'corrected_value': expected_ref_id
                 })
-        
+
+        #Compare drks_id (DRKS_id) - case sensitive with normalization
+        expected_ref_id = study_row.get('Registrierungs-nummer DRKS')
+        actual_ref_id = text_row.get('drks_id')
+        if pd.notna(expected_ref_id) and pd.notna(actual_ref_id):
+            expected_normalized = normalize_text(str(expected_ref_id)).lower()
+            actual_normalized = normalize_text(str(actual_ref_id)).lower()
+            if expected_normalized != actual_normalized:
+                mismatches.append({
+                    'acronym': acronym,
+                    'column': 'ref_id',
+                    'wrong_value': actual_ref_id,
+                    'corrected_value': expected_ref_id
+                })
+
         # Compare nct_id - case-insensitive with normalization
         expected_nct = study_row.get('Registrierungsnummer Clinical trials gov')
         actual_nct = text_row.get('nct_id')
@@ -216,7 +233,19 @@ def compare_studies(df_studien, df_text_csv):
                 })
         
         # Compare organsystem (Erkrankung) - case-insensitive with normalization
-        expected_organ = study_row.get('Erkrankung')
+       #expected_organ = study_row.get('Erkrankung')
+        #actual_organ = text_row.get('organsystem')
+        #if pd.notna(expected_organ) and pd.notna(actual_organ):
+            #expected_normalized = normalize_text(str(expected_organ)).lower()
+            #actual_normalized = normalize_text(str(actual_organ)).lower()
+            #if expected_normalized != actual_normalized:
+                #mismatches.append({
+                    #'acronym': acronym,
+                    #'column': 'organsystem',
+                    #'wrong_value': actual_organ,
+                    #'corrected_value': expected_organ
+                #})
+        expected_organ = study_row.get('Erkrankung vereinfacht')
         actual_organ = text_row.get('organsystem')
         if pd.notna(expected_organ) and pd.notna(actual_organ):
             expected_normalized = normalize_text(str(expected_organ)).lower()
@@ -479,7 +508,7 @@ class ComparisonApp:
                 try:
                     df_text_csv = pd.read_excel(self.mapped_file_path)
                     used_method = "Excel direct read"
-                    print(f"✓ Successfully loaded Excel file")
+                    print(f"Successfully loaded Excel file")
                 except Exception as e:
                     print(f"Error loading Excel file: {e}")
                     raise Exception(f"Could not read Excel file: {e}")
@@ -527,7 +556,7 @@ class ComparisonApp:
                         print(f"Trying encoding: {enc}")
                         df_text_csv = pd.read_csv(self.mapped_file_path, encoding=enc)
                         used_method = f"CSV with encoding: {enc}"
-                        print(f"✓ Successfully loaded with encoding: {enc}")
+                        print(f"Successfully loaded with encoding: {enc}")
                         break
                     except (UnicodeDecodeError, UnicodeError) as e:
                         print(f"  Failed with {enc}: {str(e)[:50]}")
@@ -546,15 +575,15 @@ class ComparisonApp:
                             from io import StringIO
                             df_text_csv = pd.read_csv(StringIO(decoded_content))
                             used_method = "binary+latin1 (error replacement)"
-                            print("✓ Successfully loaded with binary decoding")
+                            print("Successfully loaded with binary decoding")
                     except Exception as e:
                         raise Exception(f"Could not read CSV file: {e}")
             
             if df_text_csv is None:
                 raise Exception("Could not read the mapped file")
             
-            print(f"\n✓ Final used method: {used_method}")
-            print(f"✓ Mapped file has {len(df_text_csv)} rows and {len(df_text_csv.columns)} columns")
+            print(f"\nFinal used method: {used_method}")
+            print(f"Mapped file has {len(df_text_csv)} rows and {len(df_text_csv.columns)} columns")
             
             # Run comparison
             print("\nComparing studies...")
@@ -565,15 +594,15 @@ class ComparisonApp:
             output_path = os.path.join(script_directory, output_filename)
             mismatches_df.to_excel(output_path, index=False, engine='openpyxl')
             
-            print(f"\n✓ Found {len(mismatches_df)} mismatches")
-            print(f"✓ Saved to: {output_path}")
+            print(f"\nFound {len(mismatches_df)} mismatches")
+            print(f"Saved to: {output_path}")
             
             self.update_status("Comparison completed successfully!")
             self.root.after(0, lambda: messagebox.showinfo("Success", f"Comparison completed!\n\nFound {len(mismatches_df)} mismatches.\n\nOutput saved to:\n{output_path}"))
             
         except Exception as e:
             error_msg = f"Error: {str(e)}"
-            print(f"\n❌ {error_msg}")
+            print(f"\n{error_msg}")
             self.update_status("Error occurred during comparison")
             self.root.after(0, lambda: messagebox.showerror("Error", error_msg))
             import traceback
